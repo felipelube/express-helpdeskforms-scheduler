@@ -1,0 +1,38 @@
+{
+  "name": "express-helpdeskforms-scheduler",
+  "version": "1.0.0",
+  "description": "Agendador para processamento de notificações de Requisições do helpdeskforms-api",
+  "main": "main.js",
+  "scripts": {
+    "test": "gulp test"
+  },
+  "author": "felipe.lubra@gmail.com",
+  "license": "ISC",
+  "depedencies": {
+    "gulp": "^3.9.1",
+    "gulp-nodemon": "^2.2.1",
+    "jsend": "^1.0.2",
+    "morgan": "^1.8.2",
+    "config": "^1.26.1"
+  },
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "chai-http": "^3.0.0",
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^15.0.1",
+    "eslint-plugin-import": "^2.6.1",
+    "eslint-plugin-jsx-a11y": "^5.1.0",
+    "eslint-plugin-react": "^7.1.0",
+    "gulp-mocha": "^4.3.1",
+    "mocha": "^3.4.2"
+  },
+  "dependencies": {
+    "boom": "^5.1.0",
+    "es6-template-strings": "^2.0.1",
+    "express": "^4.15.3",
+    "gulp": "^3.9.1",
+    "gulp-nodemon": "^2.2.1",
+    "kue": "^0.11.6",
+    "request-promise-native": "^1.0.4"
+  }
+}
