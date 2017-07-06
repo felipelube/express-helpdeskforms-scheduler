@@ -63,14 +63,15 @@ const preProcessNotifications = async (job, queue, done) => {
       notifications.push(notification);
     });
 
-    queue.create('sendNotifications', notifications).save((err) => {
+    queue.create('sendNotifications', notifications).priority('high')
+    .save((err) => {
       if (err) {
         throw new Error(`Falha na criação do job para envio de e-mails para as notficiações da 
         Requisição ${request._id}: ${err.message}`);
       }
     });
-
-    done(); // termine com esse job
+    /** @todo atualize o status da requisição na API */
+    done(); // termine esse job
   } catch (e) {
     done(e);
   }

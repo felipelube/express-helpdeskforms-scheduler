@@ -1,4 +1,4 @@
-const secrets = require('./secrets');
+const secrets = require('./secrets/');
 
 module.exports = {
   PORT: 8001,

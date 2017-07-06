@@ -17,8 +17,11 @@ queue.process('sendNotifications', (job, done) => {
 
 const app = express();
 app.use('/api', kue.app);
-app.listen(config.PORT);
+app.listen(config.PORT, () => {
+  console.log(`Scheduler escutando na porta ${config.PORT}`);
+});
 
 /** @todo descobrir uma forma de customzar as rotas do app kue ou simplesmente ignorar o app
  * embutido no kue e fazer o nosso próprio com as nossas rotas (recomendável) */
 
+module.exports = app;

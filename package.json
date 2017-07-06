@@ -27,6 +27,7 @@
     "mocha": "^3.4.2"
   },
   "dependencies": {
+    "bluebird": "^3.5.0",
     "boom": "^5.1.0",
     "config": "^1.26.1",
     "es6-template-strings": "^2.0.1",
