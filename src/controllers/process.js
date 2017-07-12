@@ -1,5 +1,5 @@
 const Boom = require('boom');
-const webRequest = require('request-promise-native');
+const webRequest = require('requestretry');
 const template = require('es6-template-strings');
 const config = require('config');
 const _ = require('lodash');
@@ -9,18 +9,22 @@ const _ = require('lodash');
  * @todo transformar isso num job separado
  */
 const getServiceInfoForRequest = async (serviceName) => {
-  if (!serviceName) {
-    throw new Boom.badRequest('É necessário um nome de Serviço para requisitar');
+  try {
+    if (!serviceName) {
+      throw new Boom.badRequest('É necessário um nome de Serviço para requisitar');
+    }
+    const response = await webRequest({
+      method: 'GET',
+      uri: `${config.HELPDESK_API_SERVICES_URL}/${serviceName}`,
+      json: true,
+    });
+    if (!response.body.data) {
+      throw new Error();
+    }
+    return response.body.data;
+  } catch (e) {
+    throw new Error(`falha ao obter informações sobre o serviço ${serviceName} na API: ${e.message}`);
   }
-  return webRequest({
-    method: 'GET',
-    uri: `${config.HELPDESK_API_SERVICES_URL}/${serviceName}`,
-    json: true,
-  })
-  .then(apiRes => apiRes.data)
-  .catch((e) => {
-    throw new Error(`Falha ao pegar informações sobre o Serviço ${serviceName}: ${e.message}`);
-  });
 };
 
 const preProcessNotification = (serviceNotification, contextualData) => {
@@ -62,14 +66,11 @@ const preProcessNotifications = async (job, queue, done) => {
       job.progress(pending, servicesNotifications.length); // informe o progresso desse job
       notifications.push(notification);
     });
+    request.notifications = notifications;
+    request.status = 'notificationsProcessed';
 
-    queue.create('sendNotifications', notifications).priority('high')
-    .save((err) => {
-      if (err) {
-        throw new Error(`Falha na criação do job para envio de e-mails para as notficiações da 
-        Requisição ${request._id}: ${err.message}`);
-      }
-    });
+    queue.create('requestUpdate', request).priority('low').save();
+    queue.create('sendNotifications', request).priority('high');
     /** @todo atualize o status da requisição na API */
     done(); // termine esse job
   } catch (e) {
@@ -77,6 +78,35 @@ const preProcessNotifications = async (job, queue, done) => {
   }
 };
 
+const clientOrServerError = (err, response) => {
+  return response && response.statusCode >= 400 && response.statusCode < 600;
+};
+
+const ClientServerOrNetworkError = webRequest.RetryStrategies.HTTPOrNetworkError(
+  clientOrServerError, webRequest.RetryStrategies.NetworkError);
+
+const requestUpdate = async (job, queue, done) => {    
+  try {
+    const request = job.data;
+    const response = await webRequest({
+      method: 'PUT',
+      uri: `${config.HELPDESK_API_REQUESTS_URL}/${request.id}`,
+      json: request,
+      retryDelay: 500, /** @todo alterar*/
+      maxAttempts: 2,
+      retryStrategy: ClientServerOrNetworkError,      
+    });
+    if (response && response.statusCode >= 400 && response.statusCode < 600) {
+      throw new Error(`Falha ao tentar enviar atualizações sobre a Requisição ${request.id} à API.
+      Resposta da API: ${JSON.stringify(response.body)}`);
+    }
+    done();
+  } catch (e) {
+    done(e);
+  }
+};
+
 module.exports = {
   preProcessNotifications,
+  requestUpdate,
 };

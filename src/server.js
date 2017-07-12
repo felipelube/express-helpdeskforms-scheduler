@@ -4,7 +4,7 @@ const config = require('config');
 
 const queue = kue.createQueue();
 
-const { preProcessNotifications } = require('./controllers/process');
+const { preProcessNotifications, requestUpdate } = require('./controllers/process');
 const { sendNotifications } = require('./controllers/send');
 
 queue.process('preProcessNotifications', (job, done) => {
@@ -13,6 +13,10 @@ queue.process('preProcessNotifications', (job, done) => {
 
 queue.process('sendNotifications', (job, done) => {
   sendNotifications(job, queue, done);
+});
+
+queue.process('requestUpdate', (job, done) => {
+  requestUpdate(job, queue, done);
 });
 
 const app = express();
