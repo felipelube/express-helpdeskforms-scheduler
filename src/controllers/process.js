@@ -28,6 +28,7 @@ const getServiceInfoForRequest = async (serviceName) => {
 };
 
 const preProcessNotification = (serviceNotification, contextualData) => {
+  console.log('iniciando o processamento de uma notificação');
   const notification = {};
   if (!contextualData) {
     throw new Error('Contextual data is needed for processing Request notification');
@@ -51,30 +52,32 @@ const preProcessNotification = (serviceNotification, contextualData) => {
  * notificação e/ou serviço ao qual ela está associada. Depois, cria um job filho para enviar
  * a notificação desta Requisição para o destinatário.
  */
-const preProcessNotifications = async (job, queue, done) => {
+const preProcessNotifications = async (job, queues) => {  
   try {
     const request = job.data;
     const service = await getServiceInfoForRequest(request.service_name);
     const notifications = [];
 
-    _.forEach(service.notifications, (serviceNotification, index, servicesNotifications) => {
-      const notification = preProcessNotification(serviceNotification, {
+    const notificationsToProcess = service.notifications.map(async (serviceNotification, index) => {
+      const processedNotification = preProcessNotification(serviceNotification, {
         request,
         service: _.pick(service, ['data', 'category', 'sa_category', 'name', 'description']),
       });
-      const pending = servicesNotifications.length - (index + 1);
-      job.progress(pending, servicesNotifications.length); // informe o progresso desse job
-      notifications.push(notification);
+      notifications.push(processedNotification);
+
+      const progress = ((index + 1) / service.notifications.length) * 100;
+
+      job.progress(progress);
     });
+
     request.notifications = notifications;
     request.status = 'notificationsProcessed';
-
-    queue.create('requestUpdate', request).priority('low').save();
-    queue.create('sendNotifications', request).priority('high');
-    /** @todo atualize o status da requisição na API */
-    done(); // termine esse job
+    
+    // queue.create('requestUpdate', request).priority('low').save();
+    // queue.create('sendNotifications', request).priority('high');
+    /** @todo atualize o status da requisição na API */    
   } catch (e) {
-    done(e);
+    throw e;
   }
 };
 
