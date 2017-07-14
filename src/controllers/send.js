@@ -1,41 +1,48 @@
 const config = require('config');
-const _ = require('lodash');
-const template = require('es6-template-strings');
-
+/**
+ * Instância do mailgun usando as configurações sensíveis ao ambiente
+ */
 const mailgun = require('mailgun-js')({
   apiKey: config.secrets.mailgun.apiKey,
   domain: config.secrets.mailgun.domain,
 });
 
 /**
- * @desc envia e-mails usando os dados da notificação através da API do Mailgun
- * @todo lidar com anexos: se um link para eles veio no e-mail, abra-os e depois serialize para
- * serem enviados corretamente (talvez um job filho para processar anexos)
+ * Envia as notificações de uma Requisição usando a API do Mailgun
+ * Em ambientes de testes e desenvolvimento, simplesmente envia o e-mail para o console
+ *
+ * @todo lidar com anexos, em especial se os arquivos não estão serializados na Requisição ou se
+ * são links (talvez um job filho para processar anexos)
+ * @param {any} job o job para ser processado com a Requisição em 'data'
+ * @param {any} queues as filas definidas na aplicação, com as quais é possível fazer operações
  */
-const sendNotifications = async (job, queue, done) => {
+const sendNotifications = async (job, queues) => {
   try {
     const request = job.data;
     const notifications = request.notifications;
 
     const notificationsToSent = notifications.map(async (notification, index) => {
       const email = {
-        to: notification.to,
-        from: notification.from,
-        subject: notification.subject,
-        text: template(notification.body, { notification }),
+        to: notification.data.to,
+        from: notification.data.from,
+        subject: notification.data.subject,
+        text: notification.data.body,
       };
-      /** @todo atualize o status da notificação */
-      await mailgun.messages().send(email);
-      const pending = notifications.length - (index + 1);
-      job.progress(pending, notifications.length); // informe o progresso desse job
+      // simplesmente logue os e-mails no ambiente de teste para não sobrecarregar a cota do Mailgun
+      if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'dev') {
+        console.log(email);
+      } else {
+        await mailgun.messages().send(email);
+      }
+      const progress = ((index + 1) / request.notifications.length) * 100;
+      job.progress(progress);
     });
-
     await Promise.all(notificationsToSent);
+
     request.status = 'notificationsSent';
-    queue.create('requestUpdate', request).priority('low').save();
-    done();
+    await queues.updateRequest.add(request);
   } catch (e) {
-    done(e);
+    throw e;
   }
 };
 

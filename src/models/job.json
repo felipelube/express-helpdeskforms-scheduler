@@ -1,0 +1,23 @@
+{
+  "basic": {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "definitions": {},
+    "id": "jobModel",
+    "properties": {
+      "data": {
+        "id": "/properties/data",
+        "type": "object"
+      },
+      "type": {
+        "id": "/properties/type",
+        "title": "Tipo do trabalho",
+        "enum": ["sendNotifications", "requestUpdate", "translateNotificationsData"]
+      }
+    },
+    "required": [
+      "data",
+      "type"
+    ],
+    "type": "object"
+  }
+}

@@ -1,11 +1,18 @@
 const Boom = require('boom');
+const expressJSONSchema = require('express-jsonschema');
+const logger = require('./apiUtil').logger;
 
 const apiResponses = () => {
   const exceptionToJsendResponse = (err, req, res, next) => {
     let error = err;
     /** converta todos os erros para erros Boom */
     if (!error.isBoom) { // se esse é um erro genérico
-      error = Boom.wrap(error); // decora o erro com propriedades de erro Boom
+      if (error instanceof expressJSONSchema.JsonSchemaValidation) {
+        // crie um novo erro Boom Bad Request em casos de problemas de validação
+        error = new Boom.badRequest('Erro na validação dos dados', error.validations);
+      } else if (error instanceof Error) {
+        error = Boom.wrap(error); // decora o erro com propriedades de erro Boom
+      }
     }
 
     if (error instanceof Boom.notFound) {
@@ -16,7 +23,7 @@ const apiResponses = () => {
       .status(error.output.statusCode)
       .set(error.output.headers);
 
-    console.error(error);
+    logger.debug(error);
     if (error.isServer) { // erros http 5x são 'erros 'jsend
       return res.jsend.error(error.message, {
         code: error.output.statusCode,
@@ -32,7 +39,7 @@ const apiResponses = () => {
 
     res.status(404);
 
-    console.error(err);
+    logger.debug(err);
     if (req.accepts('json')) {
       return next(res
         .set(err.output.headers)

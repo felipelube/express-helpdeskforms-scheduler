@@ -1,11 +1,8 @@
 const express = require('express');
-
-const router = express.Router;
-
+const jobsController = require('../controllers/jobsController');
 
 const routes = () => {
-  const jobsController = require('../controllers/jobsController');
-  const jobsRouter = router();
+  const jobsRouter = express.Router();
 
   jobsRouter
     .route('/')
