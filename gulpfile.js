@@ -25,7 +25,7 @@ gulp.task('test', () => {
   process.env.NODE_ENV = 'test';
   process.env.PORT = 3000;
 
-  gulp.src(['./test/*.js'], {
+  gulp.src(['./test/functional_tests/*.js', './test/unit_tests/*.js'], {
     read: false,
   })
     .pipe(mocha({
