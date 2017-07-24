@@ -1,4 +1,4 @@
-const { describe, it } = require('mocha');
+const { describe, it, before, beforeEach } = require('mocha');
 const nock = require('nock');
 const config = require('config');
 const redis = require('ioredis');
@@ -7,20 +7,29 @@ const template = require('es6-template-strings');
 const { translateNotificationsData, requestUpdate } = require('../../src/controllers/process');
 const { sendNotifications } = require('../../src/controllers/send');
 
-const { dbMaintentanceService, requestTranslationJob } = require('../util');
+const { dbMaintentanceService, requestDataTranslationJob } = require('../util');
 
 const Queue = require('bull');
 
-const helpdeskFormsAPI = nock(config.HELPDESK_API_URL)
-  .get('/api/v1/services/bd_maintenance')
-  .reply(200, {
-    status: 'success',
-    data: dbMaintentanceService,
-  });
-
 global.Promise = require('bluebird');
 
-describe.only('Testes unitários', () => {
+
+describe('Testes unitários', () => {
+  /** crie um mini web server para imitar respostas da API */
+  before(() => nock(config.HELPDESK_API_URL)
+      .get(`/api/v1/services/${dbMaintentanceService.machine_name}`)
+      .reply(200, {
+        status: 'success',
+        data: dbMaintentanceService },
+      ));
+      /** @todo imitar respostas de atualização também, necessárias para testar 
+       * process.requestUpdate()
+       *
+       * .put(`/api/v1/requests/${requestDataTranslationJob.data.id}`, { ... } )
+       *
+       **/
+
+
   describe('Teste com funções dos workers', () => {
     const queues = {
       translateNotificationsData: new Queue('teste de tradução de notificações'),
@@ -38,13 +47,8 @@ describe.only('Testes unitários', () => {
     });
 
     it('teste de translateNotificationsData', (done) => {
-      queues.translateNotificationsData.on('active', (job) => {
-        console.log('início do teste com translateNotificationsData');
-        job.data.should.eql(requestTranslationJob.data);
-      });
-
-      queues.translateNotificationsData.on('progress', (job, progress) => {
-        console.log(progress);
+      queues.translateNotificationsData.on('active', (job) => {        
+        job.data.should.eql(requestDataTranslationJob.data);
       });
 
       queues.translateNotificationsData.on('completed', (job, result) => {
@@ -60,15 +64,18 @@ describe.only('Testes unitários', () => {
               .notifications[index].data_format[prop],
               {
                 service: dbMaintentanceService,
-                request: requestTranslationJob.data,
+                request: requestDataTranslationJob.data,
               }));
           }
         }, this);
-        console.log('fim do teste com translateNotificationsData');
         done();
       });
-      /** adicione manualmente um job nessa fila para tradução e inicie, propriamente, o teste */
-      queues.translateNotificationsData.add(requestTranslationJob.data);
+
+      queues.translateNotificationsData.on('failed', (job, err) => { 
+        done(new Error(err.message));
+      });
+      /** adicione um job nessa fila para tradução e inicie, propriamente, o teste */
+      queues.translateNotificationsData.add(requestDataTranslationJob.data);
     });
   });
 });

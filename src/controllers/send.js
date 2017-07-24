@@ -1,4 +1,5 @@
 const config = require('config');
+const { logger } = require('../util/apiUtil');
 /**
  * Instância do mailgun usando as configurações sensíveis ao ambiente
  */
@@ -30,7 +31,7 @@ const sendNotifications = async (job, queues, done) => {
       };
       // simplesmente logue os e-mails no ambiente de teste para não sobrecarregar a cota do Mailgun
       if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'dev') {
-        console.log(email);
+        logger.debug(email);
       } else {
         await mailgun.messages().send(email);
       }

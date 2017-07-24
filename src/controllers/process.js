@@ -77,7 +77,7 @@ const getServiceInfoForRequest = async (serviceName) => {
  * @returns uma notificação de Serviço com dados traduzidos
  */
 const translateNotificationData = (serviceNotification, contextualData) => {
-  console.log('iniciando translateNotificationData');
+  logger.debug('iniciando translateNotificationData');
   const notification = {};
   if (!contextualData) {
     throw new Error('são necessários informações contextuais para traduzir os dados de uma notificação');
