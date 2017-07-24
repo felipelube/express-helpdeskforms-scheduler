@@ -20,9 +20,9 @@ const queues = { /** @todo Object.freeze() em queues? */
 };
 
 /** Associação das filas com os workers */
-queues.translateNotificationsData.process(job => translateNotificationsData(job, queues));
-queues.sendNotifications.process(job => sendNotifications(job, queues));
-queues.requestUpdate.process(job => requestUpdate(job));
+queues.translateNotificationsData.process((job, done) => translateNotificationsData(job, queues, done));
+queues.sendNotifications.process((job, done) => sendNotifications(job, queues, done));
+queues.requestUpdate.process((job, done) => requestUpdate(job, done));
 
 /** DEBUG */
 queues.translateNotificationsData.on('completed', () => {

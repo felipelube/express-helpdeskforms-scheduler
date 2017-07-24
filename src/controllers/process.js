@@ -77,7 +77,7 @@ const getServiceInfoForRequest = async (serviceName) => {
  * @returns uma notificação de Serviço com dados traduzidos
  */
 const translateNotificationData = (serviceNotification, contextualData) => {
-  logger.debug('iniciando translateNotificationData');
+  console.log('iniciando translateNotificationData');
   const notification = {};
   if (!contextualData) {
     throw new Error('são necessários informações contextuais para traduzir os dados de uma notificação');
@@ -104,7 +104,7 @@ const translateNotificationData = (serviceNotification, contextualData) => {
  * @param {any} job o job para ser processado com a Requisição em 'data'
  * @param {any} queues as filas definidas na aplicação, com as quais é possível fazer operações
  */
-const translateNotificationsData = async (job, queues) => {
+const translateNotificationsData = async (job, queues, done) => {
   try {
     logger.debug('iniciado translateNotificationsData');
     const request = job.data;
@@ -115,7 +115,7 @@ const translateNotificationsData = async (job, queues) => {
       const requestNotification = serviceNotification;
       requestNotification.data = translateNotificationData(serviceNotification, {
         request, /** @todo filtrar campos da Requisição também */
-        service: _.pick(service, ['data', 'category', 'sa_category', 'name', 'description']),
+        service: _.pick(service, ['data', 'category', 'ca_info', 'name', 'description']),
       });
       delete requestNotification.data_format;
 
@@ -130,9 +130,10 @@ const translateNotificationsData = async (job, queues) => {
 
     await queues.sendNotifications.add(request); // crie job p/ enviar as notificações processadas
     logger.debug('terminado translateNotificationsData');
+    done(); //passar como resultado?
   } catch (e) {
     logger.debug('falha em translateNotificationsData');
-    throw e;
+    done(new Error(e.message));
   }
 };
 
@@ -142,7 +143,7 @@ const translateNotificationsData = async (job, queues) => {
  * @todo não usar a biblioteca node-request-retry: deixar a fila cuidar de jobs que falharam
  * @param {any} job o job para ser processado com a Requisição em 'data'
  */
-const requestUpdate = async (job) => {
+const requestUpdate = async (job, done) => {
   try {
     logger.debug('iniciado requestUpdate');
     const request = job.data;
@@ -166,10 +167,11 @@ const requestUpdate = async (job) => {
       throw new Error(`Falha ao tentar enviar atualizações sobre a Requisição ${request.id} à API.
       Resposta da API: ${JSON.stringify(response.body)}`);
     }
+    done();
     logger.debug('terminado requestUpdate');
   } catch (e) {
     logger.debug('falha em requestUpdate');
-    throw e;
+    done(new Error(e.message));
   }
 };
 

@@ -1,5 +1,5 @@
 const { server, postJob, requestDataTranslationJob, invalidRequestDataTranslationJobWithoutType,
-  invalidRequestDataTranslationJobWithoutData } = require('./util/');
+  invalidRequestDataTranslationJobWithoutData } = require('../util/');
 const { describe, it } = require('mocha');
 
 global.Promise = require('bluebird');

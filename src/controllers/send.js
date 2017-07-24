@@ -16,7 +16,7 @@ const mailgun = require('mailgun-js')({
  * @param {any} job o job para ser processado com a Requisição em 'data'
  * @param {any} queues as filas definidas na aplicação, com as quais é possível fazer operações
  */
-const sendNotifications = async (job, queues) => {
+const sendNotifications = async (job, queues, done) => {
   try {
     const request = job.data;
     const notifications = request.notifications;
@@ -42,7 +42,7 @@ const sendNotifications = async (job, queues) => {
     request.status = 'notificationsSent';
     await queues.updateRequest.add(request);
   } catch (e) {
-    throw e;
+    done(new Error(e.message));
   }
 };
 
