@@ -1,8 +1,9 @@
-#Helpdesk Forms Server - Scheduler
+# Helpdesk Forms Server - Scheduler
+
 Recebe as Requisições criadas pelo Helpdesk Forms Server - Creator, processa elas numa fila interna, notifica o 
 Creator a cada alteração de status e envia as notificações das Requisições tal como essas foram configuradas.
 
-##Conceitos
+## Conceitos
 - Serviço: é toda atividade específica ofertada em um catálogo e que possui determinados requisitos, informações a serem
 preenchidas pelo usuário final em um formulário específico, bem como informações sobre ações de notificação.
 - Formulário: coleção de campos usados para a instrução de uma Requisição. Esses campos são customizáveis através de 
